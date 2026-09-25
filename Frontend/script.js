@@ -66,8 +66,6 @@ translateButton.addEventListener(
             targetLanguage.value;
 
 
-        // Check text
-
         if (!text) {
 
             alert(
@@ -78,15 +76,11 @@ translateButton.addEventListener(
         }
 
 
-        // Disable button
-
         translateButton.disabled = true;
 
         translateButton.textContent =
             "Translating...";
 
-
-        // Clear previous result
 
         translatedText.value = "";
 
@@ -95,6 +89,7 @@ translateButton.addEventListener(
 
 
         copyButton.disabled = true;
+
         exportButton.disabled = true;
 
 
@@ -135,27 +130,20 @@ translateButton.addEventListener(
             }
 
 
-            // Store source language
-
             detectedSourceLanguage =
                 data.source_language;
 
-
-            // Show translation
 
             translatedText.value =
                 data.translation;
 
 
-            // Show languages
-
             detectedLanguage.textContent =
                 `Detected language: ${data.source_language} → ${data.target_language}`;
 
 
-            // Enable buttons
-
             copyButton.disabled = false;
+
             exportButton.disabled = false;
 
 
@@ -182,8 +170,6 @@ translateButton.addEventListener(
 
         }
 
-
-        // Enable button
 
         translateButton.disabled = false;
 
@@ -254,7 +240,7 @@ copyButton.addEventListener(
 
 
 // ==========================================
-// EXPORT SINGLE TRANSLATION TO EXCEL
+// EXPORT SINGLE TRANSLATION
 // ==========================================
 
 exportButton.addEventListener(
@@ -280,8 +266,6 @@ exportButton.addEventListener(
             return;
         }
 
-
-        // Disable button
 
         exportButton.disabled = true;
 
@@ -424,8 +408,6 @@ excelButton.addEventListener(
     "click",
     async () => {
 
-        // Check file
-
         if (!excelFile.files.length) {
 
             alert(
@@ -443,17 +425,30 @@ excelButton.addEventListener(
             excelTargetLanguage.value;
 
 
-        // Disable button
+        // --------------------------------------
+        // DISABLE BUTTON
+        // --------------------------------------
 
         excelButton.disabled = true;
 
         excelButton.textContent =
-            "Translating Excel...";
+            "Starting...";
+
+
+        // --------------------------------------
+        // SHOW PROGRESS
+        // --------------------------------------
+
+        showExcelProgress(
+            "Starting translation..."
+        );
 
 
         try {
 
-            // Create form data
+            // ----------------------------------
+            // CREATE FORM DATA
+            // ----------------------------------
 
             const formData =
                 new FormData();
@@ -471,7 +466,9 @@ excelButton.addEventListener(
             );
 
 
-            // Send Excel to backend
+            // ----------------------------------
+            // START JOB
+            // ----------------------------------
 
             const response = await fetch(
                 "http://127.0.0.1:5000/translate-excel",
@@ -483,41 +480,256 @@ excelButton.addEventListener(
             );
 
 
-            // Check response
+            const data =
+                await response.json();
+
 
             if (!response.ok) {
 
-                const data =
-                    await response.json();
-
                 throw new Error(
                     data.error ||
-                    "Excel translation failed."
+                    "Could not start Excel translation."
                 );
             }
 
 
-            // Convert response to file
-
-            const blob =
-                await response.blob();
+            const jobId =
+                data.job_id;
 
 
-            // Create download URL
+            // ----------------------------------
+            // CHECK PROGRESS
+            // ----------------------------------
 
-            const url =
-                window.URL.createObjectURL(
-                    blob
+            await monitorExcelProgress(
+                jobId
+            );
+
+
+        } catch (error) {
+
+            console.error(
+                "Excel translation error:",
+                error
+            );
+
+
+            showExcelProgress(
+                "Translation failed."
+            );
+
+
+            alert(
+                error.message ||
+                "Could not translate the Excel file."
+            );
+
+
+            excelButton.disabled = false;
+
+            excelButton.textContent =
+                "Translate Excel";
+        }
+
+    }
+);
+
+
+// ==========================================
+// SHOW EXCEL PROGRESS
+// ==========================================
+
+function showExcelProgress(message) {
+
+    let progressContainer =
+        document.getElementById(
+            "excelProgress"
+        );
+
+
+    // Create progress area if it doesn't exist
+
+    if (!progressContainer) {
+
+        progressContainer =
+            document.createElement("div");
+
+        progressContainer.id =
+            "excelProgress";
+
+        progressContainer.style.marginTop =
+            "20px";
+
+        progressContainer.style.padding =
+            "15px";
+
+        progressContainer.style.background =
+            "#f4f6f8";
+
+        progressContainer.style.borderRadius =
+            "8px";
+
+
+        excelButton.parentNode.appendChild(
+            progressContainer
+        );
+    }
+
+
+    progressContainer.innerHTML =
+        message;
+}
+
+
+// ==========================================
+// MONITOR EXCEL PROGRESS
+// ==========================================
+
+async function monitorExcelProgress(
+    jobId
+) {
+
+    while (true) {
+
+        const response = await fetch(
+            `http://127.0.0.1:5000/translation-status/${jobId}`
+        );
+
+
+        const data =
+            await response.json();
+
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.error ||
+                "Could not get translation status."
+            );
+        }
+
+
+        // ----------------------------------
+        // CALCULATE PERCENTAGE
+        // ----------------------------------
+
+        let percentage = 0;
+
+
+        if (data.total > 0) {
+
+            percentage =
+                Math.round(
+                    (
+                        data.current /
+                        data.total
+                    ) * 100
                 );
+        }
 
 
-            // Create download link
+        // ----------------------------------
+        // SHOW PROGRESS
+        // ----------------------------------
+
+        showExcelProgress(`
+            <strong>Translating Excel...</strong>
+
+            <div style="
+                margin-top: 10px;
+                background: #ddd;
+                border-radius: 6px;
+                height: 12px;
+                overflow: hidden;
+            ">
+                <div style="
+                    width: ${percentage}%;
+                    height: 100%;
+                    background: #1F4E78;
+                    transition: width 0.3s;
+                "></div>
+            </div>
+
+            <div style="
+                margin-top: 8px;
+                font-size: 14px;
+                color: #666;
+            ">
+                ${data.current} / ${data.total}
+                products
+                (${percentage}%)
+            </div>
+
+            ${
+                data.failed > 0
+                ? `
+                    <div style="
+                        margin-top: 5px;
+                        font-size: 13px;
+                        color: #a33;
+                    ">
+                        Failed: ${data.failed}
+                    </div>
+                `
+                : ""
+            }
+        `);
+
+
+        // ----------------------------------
+        // COMPLETED
+        // ----------------------------------
+
+        if (
+            data.status === "completed"
+            && data.download_ready
+        ) {
+
+            showExcelProgress(`
+                <strong>
+                    Translation complete ✓
+                </strong>
+
+                <div style="
+                    margin-top: 8px;
+                    font-size: 14px;
+                    color: #666;
+                ">
+                    ${data.completed}
+                    / ${data.total}
+                    products translated.
+                </div>
+
+                ${
+                    data.failed > 0
+                    ? `
+                        <div style="
+                            margin-top: 5px;
+                            font-size: 13px;
+                            color: #a33;
+                        ">
+                            Failed: ${data.failed}
+                        </div>
+                    `
+                    : ""
+                }
+            `);
+
+
+            // --------------------------------
+            // DOWNLOAD
+            // --------------------------------
+
+            const downloadUrl =
+                `http://127.0.0.1:5000/download-excel/${jobId}`;
+
 
             const link =
                 document.createElement("a");
 
 
-            link.href = url;
+            link.href =
+                downloadUrl;
 
             link.download =
                 "translated_products.xlsx";
@@ -530,40 +742,45 @@ excelButton.addEventListener(
             link.remove();
 
 
-            // Clean up
+            // --------------------------------
+            // RESET BUTTON
+            // --------------------------------
 
-            window.URL.revokeObjectURL(
-                url
-            );
+            excelButton.disabled = false;
 
-
-            alert(
-                "Excel translation completed!"
-            );
+            excelButton.textContent =
+                "Translate Excel";
 
 
-        } catch (error) {
-
-            console.error(
-                "Excel translation error:",
-                error
-            );
-
-
-            alert(
-                error.message ||
-                "Could not translate the Excel file."
-            );
-
+            return;
         }
 
 
-        // Enable button
+        // ----------------------------------
+        // FAILED
+        // ----------------------------------
 
-        excelButton.disabled = false;
+        if (data.status === "failed") {
 
-        excelButton.textContent =
-            "Translate Excel";
+            throw new Error(
+                data.error ||
+                "Excel translation failed."
+            );
+        }
+
+
+        // ----------------------------------
+        // WAIT 1 SECOND
+        // ----------------------------------
+
+        await new Promise(
+            resolve =>
+                setTimeout(
+                    resolve,
+                    1000
+                )
+        );
 
     }
-);
+
+}

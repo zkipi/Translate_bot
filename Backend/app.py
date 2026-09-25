@@ -4,11 +4,14 @@ from flask_cors import CORS
 from translator import translate_text
 
 from openpyxl import Workbook
-from openpyxl.styles import Alignment, Font
+from openpyxl.styles import Alignment, Font, PatternFill, Border, Side
 
 import pandas as pd
 
 from io import BytesIO
+
+import threading
+import uuid
 
 
 # ==========================================
@@ -21,7 +24,7 @@ CORS(app)
 
 
 # ==========================================
-# LANGUAGE COLUMN SUFFIX
+# LANGUAGE COLUMN SUFFIXES
 # ==========================================
 
 LANGUAGE_SUFFIXES = {
@@ -31,6 +34,206 @@ LANGUAGE_SUFFIXES = {
     "Norwegian": "no",
     "Finnish": "fi"
 }
+
+
+# ==========================================
+# EXCEL JOB STORAGE
+# ==========================================
+
+excel_jobs = {}
+
+
+# ==========================================
+# EXCEL FORMATTING
+# ==========================================
+
+def format_worksheet(worksheet):
+
+    # ------------------------------------------
+    # COLORS
+    # ------------------------------------------
+
+    header_fill = PatternFill(
+        fill_type="solid",
+        fgColor="1F4E78"
+    )
+
+    alternate_fill = PatternFill(
+        fill_type="solid",
+        fgColor="F2F6FA"
+    )
+
+
+    # ------------------------------------------
+    # HEADER
+    # ------------------------------------------
+
+    header_font = Font(
+        bold=True,
+        color="FFFFFF"
+    )
+
+
+    for cell in worksheet[1]:
+
+        cell.fill = header_fill
+
+        cell.font = header_font
+
+        cell.alignment = Alignment(
+            horizontal="center",
+            vertical="center"
+        )
+
+
+    # ------------------------------------------
+    # BODY
+    # ------------------------------------------
+
+    for row_number in range(
+        2,
+        worksheet.max_row + 1
+    ):
+
+        # Alternate row background
+
+        if row_number % 2 == 0:
+
+            for cell in worksheet[row_number]:
+
+                cell.fill = alternate_fill
+
+
+        # Cell formatting
+
+        for cell in worksheet[row_number]:
+
+            cell.alignment = Alignment(
+                vertical="top",
+                wrap_text=True
+            )
+
+
+    # ------------------------------------------
+    # COLUMN WIDTHS
+    # ------------------------------------------
+
+    for column in worksheet.columns:
+
+        column_letter = (
+            column[0].column_letter
+        )
+
+        header = worksheet[
+            f"{column_letter}1"
+        ].value
+
+
+        # Description columns
+
+        if (
+            header == "description"
+            or (
+                isinstance(header, str)
+                and header.startswith(
+                    "description_"
+                )
+            )
+        ):
+
+            worksheet.column_dimensions[
+                column_letter
+            ].width = 60
+
+
+        # Product name columns
+
+        elif header in [
+            "name",
+            "title",
+            "product_name"
+        ]:
+
+            worksheet.column_dimensions[
+                column_letter
+            ].width = 35
+
+
+        # ID columns
+
+        elif header in [
+            "id",
+            "ID"
+        ]:
+
+            worksheet.column_dimensions[
+                column_letter
+            ].width = 12
+
+
+        # Other columns
+
+        else:
+
+            worksheet.column_dimensions[
+                column_letter
+            ].width = 20
+
+
+    # ------------------------------------------
+    # ROW HEIGHT
+    # ------------------------------------------
+
+    worksheet.row_dimensions[1].height = 25
+
+
+    for row_number in range(
+        2,
+        worksheet.max_row + 1
+    ):
+
+        worksheet.row_dimensions[
+            row_number
+        ].height = 80
+
+
+    # ------------------------------------------
+    # BORDERS
+    # ------------------------------------------
+
+    thin_border = Border(
+        bottom=Side(
+            style="thin",
+            color="D9E1F2"
+        )
+    )
+
+
+    for row in worksheet.iter_rows(
+        min_row=2
+    ):
+
+        for cell in row:
+
+            cell.border = thin_border
+
+
+    # ------------------------------------------
+    # FREEZE HEADER
+    # ------------------------------------------
+
+    worksheet.freeze_panes = "A2"
+
+
+    # ------------------------------------------
+    # FILTER
+    # ------------------------------------------
+
+    if worksheet.max_row >= 2:
+
+        worksheet.auto_filter.ref = (
+            worksheet.dimensions
+        )
 
 
 # ==========================================
@@ -47,16 +250,24 @@ def home():
 # TRANSLATE TEXT
 # ==========================================
 
-@app.route("/translate", methods=["POST"])
+@app.route(
+    "/translate",
+    methods=["POST"]
+)
 def translate():
 
     data = request.get_json()
 
     text = data.get("text")
-    target_language = data.get("target_language")
+
+    target_language = data.get(
+        "target_language"
+    )
 
 
-    # Check input
+    # ------------------------------------------
+    # CHECK INPUT
+    # ------------------------------------------
 
     if not text:
 
@@ -68,11 +279,14 @@ def translate():
     if not target_language:
 
         return jsonify({
-            "error": "No target language provided"
+            "error":
+                "No target language provided"
         }), 400
 
 
-    # Translate
+    # ------------------------------------------
+    # TRANSLATE
+    # ------------------------------------------
 
     try:
 
@@ -84,56 +298,85 @@ def translate():
 
         return jsonify({
 
-            "translation": result["translation"],
+            "translation":
+                result["translation"],
 
-            "source_language": result["source_language"],
+            "source_language":
+                result["source_language"],
 
-            "target_language": target_language
+            "target_language":
+                target_language
 
         })
 
 
     except Exception as error:
 
-        print("Translation error:", error)
+        print(
+            "Translation error:",
+            error
+        )
+
 
         return jsonify({
-            "error": "Translation failed"
+            "error":
+                "Translation failed"
         }), 500
 
 
 # ==========================================
-# EXPORT SINGLE TRANSLATION TO EXCEL
+# EXPORT SINGLE TRANSLATION
 # ==========================================
 
-@app.route("/export-excel", methods=["POST"])
+@app.route(
+    "/export-excel",
+    methods=["POST"]
+)
 def export_excel():
 
     data = request.get_json()
 
-    original_text = data.get("original_text")
-    translation = data.get("translation")
-    source_language = data.get("source_language")
-    target_language = data.get("target_language")
+
+    original_text = data.get(
+        "original_text"
+    )
+
+    translation = data.get(
+        "translation"
+    )
+
+    source_language = data.get(
+        "source_language"
+    )
+
+    target_language = data.get(
+        "target_language"
+    )
 
 
-    # Check input
+    # ------------------------------------------
+    # CHECK INPUT
+    # ------------------------------------------
 
     if not original_text:
 
         return jsonify({
-            "error": "No original text provided"
+            "error":
+                "No original text provided"
         }), 400
 
 
     if not translation:
 
         return jsonify({
-            "error": "No translation provided"
+            "error":
+                "No translation provided"
         }), 400
 
 
-    # Create workbook
+    # ------------------------------------------
+    # CREATE WORKBOOK
+    # ------------------------------------------
 
     workbook = Workbook()
 
@@ -142,80 +385,63 @@ def export_excel():
     worksheet.title = "Translation"
 
 
-    # Headers
+    # ------------------------------------------
+    # HEADERS
+    # ------------------------------------------
 
-    worksheet["A1"] = "Original description"
-    worksheet["B1"] = "Translation"
-    worksheet["C1"] = "Source language"
-    worksheet["D1"] = "Target language"
-
-
-    # Header formatting
-
-    for cell in worksheet[1]:
-
-        cell.font = Font(
-            bold=True
-        )
+    worksheet.append([
+        "Original description",
+        "Translation",
+        "Source language",
+        "Target language"
+    ])
 
 
-    # Data
+    # ------------------------------------------
+    # DATA
+    # ------------------------------------------
 
-    worksheet["A2"] = original_text
-    worksheet["B2"] = translation
-    worksheet["C2"] = source_language
-    worksheet["D2"] = target_language
+    worksheet.append([
+        original_text,
+        translation,
+        source_language,
+        target_language
+    ])
 
 
-    # Alignment
+    # ------------------------------------------
+    # FORMAT
+    # ------------------------------------------
 
-    worksheet["A2"].alignment = Alignment(
-        wrap_text=True,
-        vertical="top"
-    )
-
-    worksheet["B2"].alignment = Alignment(
-        wrap_text=True,
-        vertical="top"
-    )
-
-    worksheet["C2"].alignment = Alignment(
-        vertical="top"
-    )
-
-    worksheet["D2"].alignment = Alignment(
-        vertical="top"
+    format_worksheet(
+        worksheet
     )
 
 
-    # Column widths
-
-    worksheet.column_dimensions["A"].width = 60
-    worksheet.column_dimensions["B"].width = 60
-    worksheet.column_dimensions["C"].width = 20
-    worksheet.column_dimensions["D"].width = 20
-
-
-    # Freeze header
-
-    worksheet.freeze_panes = "A2"
-
-
-    # Save to memory
+    # ------------------------------------------
+    # SAVE
+    # ------------------------------------------
 
     excel_file = BytesIO()
 
-    workbook.save(excel_file)
+    workbook.save(
+        excel_file
+    )
 
     excel_file.seek(0)
 
 
-    # Send file
+    # ------------------------------------------
+    # SEND FILE
+    # ------------------------------------------
 
     return send_file(
         excel_file,
+
         as_attachment=True,
+
         download_name="translated_product.xlsx",
+
         mimetype=(
             "application/vnd.openxmlformats-officedocument."
             "spreadsheetml.sheet"
@@ -224,204 +450,533 @@ def export_excel():
 
 
 # ==========================================
-# TRANSLATE EXCEL FILE
+# START EXCEL TRANSLATION JOB
 # ==========================================
 
-@app.route("/translate-excel", methods=["POST"])
+@app.route(
+    "/translate-excel",
+    methods=["POST"]
+)
 def translate_excel():
 
-    # Check file
+    # ------------------------------------------
+    # CHECK FILE
+    # ------------------------------------------
 
     if "file" not in request.files:
 
         return jsonify({
-            "error": "No Excel file provided"
+            "error":
+                "No Excel file provided"
         }), 400
 
 
     file = request.files["file"]
+
 
     target_language = request.form.get(
         "target_language"
     )
 
 
-    # Check language
+    # ------------------------------------------
+    # CHECK LANGUAGE
+    # ------------------------------------------
 
     if not target_language:
 
         return jsonify({
-            "error": "No target language provided"
+            "error":
+                "No target language provided"
         }), 400
 
 
-    # Check file name
+    # ------------------------------------------
+    # CHECK FILE
+    # ------------------------------------------
 
     if not file.filename:
 
         return jsonify({
-            "error": "No file selected"
+            "error":
+                "No file selected"
         }), 400
 
 
-    # ==========================================
-    # READ EXCEL FILE
-    # ==========================================
+    # ------------------------------------------
+    # READ EXCEL
+    # ------------------------------------------
 
     try:
 
-        dataframe = pd.read_excel(file)
+        dataframe = pd.read_excel(
+            file
+        )
+
 
     except Exception as error:
 
-        print("Excel read error:", error)
+        print(
+            "Excel read error:",
+            error
+        )
+
 
         return jsonify({
-            "error": "Could not read the Excel file."
+            "error":
+                "Could not read the Excel file."
         }), 400
 
 
-    # ==========================================
+    # ------------------------------------------
     # CHECK DESCRIPTION COLUMN
-    # ==========================================
+    # ------------------------------------------
 
     if "description" not in dataframe.columns:
 
         return jsonify({
-            "error": (
-                'The Excel file must contain a column named '
-                '"description".'
-            )
+            "error":
+                'The Excel file must contain a '
+                'column named "description".'
         }), 400
 
 
-    # ==========================================
-    # CREATE TARGET COLUMN
-    # ==========================================
+    # ------------------------------------------
+    # CREATE JOB
+    # ------------------------------------------
 
-    suffix = LANGUAGE_SUFFIXES.get(
-        target_language,
-        target_language.lower()
-    )
-
-    target_column = f"description_{suffix}"
-
-
-    # ==========================================
-    # TRANSLATE DESCRIPTIONS
-    # ==========================================
-
-    translations = []
-
-    total_rows = len(dataframe)
-
-    print(
-        f"Starting Excel translation: "
-        f"{total_rows} rows → {target_language}"
+    job_id = str(
+        uuid.uuid4()
     )
 
 
-    for index, value in enumerate(
-        dataframe["description"]
-    ):
-
-        # Empty description
-
-        if pd.isna(value) or str(value).strip() == "":
-
-            translations.append("")
-
-            continue
+    total_rows = len(
+        dataframe
+    )
 
 
-        text = str(value)
+    excel_jobs[job_id] = {
+
+        "status": "processing",
+
+        "current": 0,
+
+        "total": total_rows,
+
+        "completed": 0,
+
+        "failed": 0,
+
+        "download_ready": False,
+
+        "file": None,
+
+        "error": None
+
+    }
 
 
-        try:
+    # ------------------------------------------
+    # START BACKGROUND THREAD
+    # ------------------------------------------
 
-            result = translate_text(
-                text,
-                target_language
+    thread = threading.Thread(
+        target=process_excel_translation,
+
+        args=(
+            job_id,
+            dataframe,
+            target_language
+        )
+    )
+
+
+    thread.start()
+
+
+    # ------------------------------------------
+    # RETURN JOB ID
+    # ------------------------------------------
+
+    return jsonify({
+
+        "job_id": job_id,
+
+        "total": total_rows
+
+    })
+
+
+# ==========================================
+# PROCESS EXCEL TRANSLATION
+# ==========================================
+
+def process_excel_translation(
+    job_id,
+    dataframe,
+    target_language
+):
+
+    try:
+
+        # --------------------------------------
+        # TARGET COLUMN
+        # --------------------------------------
+
+        suffix = LANGUAGE_SUFFIXES.get(
+            target_language,
+            target_language.lower()
+        )
+
+
+        target_column = (
+            f"description_{suffix}"
+        )
+
+
+        translations = []
+
+
+        total_rows = len(
+            dataframe
+        )
+
+
+        print(
+            f"Starting Excel translation "
+            f"job {job_id}"
+        )
+
+
+        # --------------------------------------
+        # TRANSLATE ROWS
+        # --------------------------------------
+
+        for index, value in enumerate(
+            dataframe["description"]
+        ):
+
+            # ----------------------------------
+            # EMPTY CELL
+            # ----------------------------------
+
+            if pd.isna(value):
+
+                translations.append("")
+
+                excel_jobs[job_id][
+                    "current"
+                ] = index + 1
+
+                excel_jobs[job_id][
+                    "completed"
+                ] += 1
+
+                print(
+                    f"Skipped empty row "
+                    f"{index + 1}/"
+                    f"{total_rows}"
+                )
+
+                continue
+
+
+            # ----------------------------------
+            # CONVERT TO TEXT
+            # ----------------------------------
+
+            text = str(value).strip()
+
+
+            # ----------------------------------
+            # EMPTY STRING
+            # ----------------------------------
+
+            if not text:
+
+                translations.append("")
+
+                excel_jobs[job_id][
+                    "current"
+                ] = index + 1
+
+                excel_jobs[job_id][
+                    "completed"
+                ] += 1
+
+                continue
+
+
+            # ----------------------------------
+            # PUNCTUATION ONLY
+            # ----------------------------------
+
+            if not any(
+                character.isalnum()
+                for character in text
+            ):
+
+                translations.append(
+                    text
+                )
+
+                excel_jobs[job_id][
+                    "current"
+                ] = index + 1
+
+                excel_jobs[job_id][
+                    "completed"
+                ] += 1
+
+                print(
+                    f"Skipped row "
+                    f"{index + 1}: "
+                    f"no translatable text"
+                )
+
+                continue
+
+
+            # ----------------------------------
+            # TRANSLATE
+            # ----------------------------------
+
+            try:
+
+                result = translate_text(
+                    text,
+                    target_language
+                )
+
+
+                translation = (
+                    result["translation"]
+                )
+
+
+                translations.append(
+                    translation
+                )
+
+
+                excel_jobs[job_id][
+                    "completed"
+                ] += 1
+
+
+                print(
+                    f"Translated row "
+                    f"{index + 1}/"
+                    f"{total_rows}"
+                )
+
+
+            except Exception as error:
+
+                print(
+                    f"Translation error "
+                    f"on row "
+                    f"{index + 1}:",
+                    error
+                )
+
+
+                # Keep empty if translation fails
+
+                translations.append("")
+
+
+                excel_jobs[job_id][
+                    "failed"
+                ] += 1
+
+
+            # ----------------------------------
+            # UPDATE PROGRESS
+            # ----------------------------------
+
+            excel_jobs[job_id][
+                "current"
+            ] = index + 1
+
+
+        # --------------------------------------
+        # ADD TRANSLATION COLUMN
+        # --------------------------------------
+
+        dataframe[
+            target_column
+        ] = translations
+
+
+        # --------------------------------------
+        # CREATE OUTPUT EXCEL
+        # --------------------------------------
+
+        output_file = BytesIO()
+
+
+        with pd.ExcelWriter(
+            output_file,
+            engine="openpyxl"
+        ) as writer:
+
+            dataframe.to_excel(
+                writer,
+
+                index=False,
+
+                sheet_name="Products"
             )
 
-            translation = result["translation"]
 
-            translations.append(
-                translation
+            worksheet = writer.book[
+                "Products"
+            ]
+
+
+            format_worksheet(
+                worksheet
             )
 
 
-            print(
-                f"Translated row "
-                f"{index + 1}/{total_rows}"
-            )
+        output_file.seek(0)
 
 
-        except Exception as error:
+        # --------------------------------------
+        # STORE RESULT
+        # --------------------------------------
 
-            print(
-                f"Translation error on row "
-                f"{index + 1}:",
-                error
-            )
-
-            # Keep cell empty if translation fails
-
-            translations.append("")
+        excel_jobs[job_id][
+            "file"
+        ] = output_file.getvalue()
 
 
-    # ==========================================
-    # ADD TRANSLATION COLUMN
-    # ==========================================
-
-    dataframe[target_column] = translations
+        excel_jobs[job_id][
+            "download_ready"
+        ] = True
 
 
-    # ==========================================
-    # CREATE OUTPUT FILE
-    # ==========================================
-
-    output_file = BytesIO()
+        excel_jobs[job_id][
+            "status"
+        ] = "completed"
 
 
-    dataframe.to_excel(
-        output_file,
-        index=False,
-        engine="openpyxl"
+        print(
+            f"Excel job {job_id} completed."
+        )
+
+
+    except Exception as error:
+
+        print(
+            f"Excel job {job_id} failed:",
+            error
+        )
+
+
+        excel_jobs[job_id][
+            "status"
+        ] = "failed"
+
+
+        excel_jobs[job_id][
+            "error"
+        ] = str(error)
+
+
+# ==========================================
+# EXCEL TRANSLATION STATUS
+# ==========================================
+
+@app.route(
+    "/translation-status/<job_id>",
+    methods=["GET"]
+)
+def translation_status(job_id):
+
+    if job_id not in excel_jobs:
+
+        return jsonify({
+            "error": "Job not found"
+        }), 404
+
+
+    job = excel_jobs[job_id]
+
+
+    return jsonify({
+
+        "status":
+            job["status"],
+
+        "current":
+            job["current"],
+
+        "total":
+            job["total"],
+
+        "completed":
+            job["completed"],
+
+        "failed":
+            job["failed"],
+
+        "download_ready":
+            job["download_ready"],
+
+        "error":
+            job["error"]
+
+    })
+
+
+# ==========================================
+# DOWNLOAD COMPLETED EXCEL
+# ==========================================
+
+@app.route(
+    "/download-excel/<job_id>",
+    methods=["GET"]
+)
+def download_excel(job_id):
+
+    if job_id not in excel_jobs:
+
+        return jsonify({
+            "error":
+                "Job not found"
+        }), 404
+
+
+    job = excel_jobs[job_id]
+
+
+    if not job["download_ready"]:
+
+        return jsonify({
+            "error":
+                "Excel file is not ready yet."
+        }), 400
+
+
+    output_file = BytesIO(
+        job["file"]
     )
 
 
     output_file.seek(0)
 
 
-    # ==========================================
-    # DOWNLOAD FILE NAME
-    # ==========================================
-
-    original_filename = file.filename
-
-    if original_filename.lower().endswith(".xlsx"):
-
-        output_filename = (
-            original_filename[:-5]
-            + f"_{suffix}.xlsx"
-        )
-
-    else:
-
-        output_filename = (
-            "translated_products.xlsx"
-        )
-
-
-    # ==========================================
-    # SEND FILE
-    # ==========================================
-
     return send_file(
         output_file,
+
         as_attachment=True,
-        download_name=output_filename,
+
+        download_name=(
+            "translated_products.xlsx"
+        ),
+
         mimetype=(
             "application/vnd.openxmlformats-officedocument."
             "spreadsheetml.sheet"
