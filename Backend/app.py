@@ -13,6 +13,8 @@ from io import BytesIO
 import threading
 import uuid
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 
 # ==========================================
 # SETUP
@@ -95,16 +97,12 @@ def format_worksheet(worksheet):
         worksheet.max_row + 1
     ):
 
-        # Alternate row background
-
         if row_number % 2 == 0:
 
             for cell in worksheet[row_number]:
 
                 cell.fill = alternate_fill
 
-
-        # Cell formatting
 
         for cell in worksheet[row_number]:
 
@@ -634,12 +632,24 @@ def process_excel_translation(
         )
 
 
-        translations = []
-
-
         total_rows = len(
             dataframe
         )
+
+
+        translations = [
+            ""
+        ] * total_rows
+
+
+        # --------------------------------------
+        # PARALLEL REQUEST SETTINGS
+        # --------------------------------------
+
+        # Number of Gemini requests running
+        # at the same time.
+
+        MAX_WORKERS = 5
 
 
         print(
@@ -647,14 +657,28 @@ def process_excel_translation(
             f"job {job_id}"
         )
 
+        print(
+            f"Using {MAX_WORKERS} "
+            f"parallel workers."
+        )
+
 
         # --------------------------------------
-        # TRANSLATE ROWS
+        # TRANSLATE ONE ROW
         # --------------------------------------
 
-        for index, value in enumerate(
-            dataframe["description"]
+        def translate_row(
+            index,
+            value
         ):
+
+            # Excel row number is +2 because:
+            #
+            # Row 1 = headers
+            # Row 2 = dataframe index 0
+
+            excel_row = index + 2
+
 
             # ----------------------------------
             # EMPTY CELL
@@ -662,23 +686,12 @@ def process_excel_translation(
 
             if pd.isna(value):
 
-                translations.append("")
-
-                excel_jobs[job_id][
-                    "current"
-                ] = index + 1
-
-                excel_jobs[job_id][
-                    "completed"
-                ] += 1
-
-                print(
-                    f"Skipped empty row "
-                    f"{index + 1}/"
-                    f"{total_rows}"
+                return (
+                    index,
+                    "",
+                    "skipped",
+                    None
                 )
-
-                continue
 
 
             # ----------------------------------
@@ -694,17 +707,12 @@ def process_excel_translation(
 
             if not text:
 
-                translations.append("")
-
-                excel_jobs[job_id][
-                    "current"
-                ] = index + 1
-
-                excel_jobs[job_id][
-                    "completed"
-                ] += 1
-
-                continue
+                return (
+                    index,
+                    "",
+                    "skipped",
+                    None
+                )
 
 
             # ----------------------------------
@@ -716,25 +724,12 @@ def process_excel_translation(
                 for character in text
             ):
 
-                translations.append(
-                    text
+                return (
+                    index,
+                    text,
+                    "skipped",
+                    None
                 )
-
-                excel_jobs[job_id][
-                    "current"
-                ] = index + 1
-
-                excel_jobs[job_id][
-                    "completed"
-                ] += 1
-
-                print(
-                    f"Skipped row "
-                    f"{index + 1}: "
-                    f"no translatable text"
-                )
-
-                continue
 
 
             # ----------------------------------
@@ -754,20 +749,17 @@ def process_excel_translation(
                 )
 
 
-                translations.append(
-                    translation
+                print(
+                    f"Translated Excel row "
+                    f"{excel_row}"
                 )
 
 
-                excel_jobs[job_id][
-                    "completed"
-                ] += 1
-
-
-                print(
-                    f"Translated row "
-                    f"{index + 1}/"
-                    f"{total_rows}"
+                return (
+                    index,
+                    translation,
+                    "completed",
+                    None
                 )
 
 
@@ -775,29 +767,109 @@ def process_excel_translation(
 
                 print(
                     f"Translation error "
-                    f"on row "
-                    f"{index + 1}:",
+                    f"on Excel row "
+                    f"{excel_row}:",
                     error
                 )
 
 
-                # Keep empty if translation fails
+                return (
+                    index,
+                    "",
+                    "failed",
+                    str(error)
+                )
 
-                translations.append("")
 
+        # --------------------------------------
+        # RUN TRANSLATIONS IN PARALLEL
+        # --------------------------------------
+
+        with ThreadPoolExecutor(
+            max_workers=MAX_WORKERS
+        ) as executor:
+
+            futures = [
+
+                executor.submit(
+                    translate_row,
+                    index,
+                    value
+                )
+
+                for index, value
+                in enumerate(
+                    dataframe["description"]
+                )
+
+            ]
+
+
+            # ----------------------------------
+            # HANDLE COMPLETED REQUESTS
+            # ----------------------------------
+
+            for completed_count, future in enumerate(
+                as_completed(futures),
+                start=1
+            ):
+
+                (
+                    index,
+                    translation,
+                    status,
+                    error
+                ) = future.result()
+
+
+                # ----------------------------------
+                # STORE RESULT AT ORIGINAL INDEX
+                # ----------------------------------
+
+                translations[index] = (
+                    translation
+                )
+
+
+                # ----------------------------------
+                # UPDATE COUNTERS
+                # ----------------------------------
+
+                if status == "completed":
+
+                    excel_jobs[job_id][
+                        "completed"
+                    ] += 1
+
+
+                elif status == "skipped":
+
+                    excel_jobs[job_id][
+                        "completed"
+                    ] += 1
+
+
+                elif status == "failed":
+
+                    excel_jobs[job_id][
+                        "failed"
+                    ] += 1
+
+
+                # ----------------------------------
+                # UPDATE PROGRESS
+                # ----------------------------------
 
                 excel_jobs[job_id][
-                    "failed"
-                ] += 1
+                    "current"
+                ] = completed_count
 
 
-            # ----------------------------------
-            # UPDATE PROGRESS
-            # ----------------------------------
-
-            excel_jobs[job_id][
-                "current"
-            ] = index + 1
+                print(
+                    f"Progress: "
+                    f"{completed_count}/"
+                    f"{total_rows}"
+                )
 
 
         # --------------------------------------
