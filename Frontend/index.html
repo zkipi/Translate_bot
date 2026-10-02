@@ -17,14 +17,45 @@
         <!-- Header -->
 
         <header class="page-header">
-            <h1>Translate Bot</h1>
-            <p>
-                Translate product descriptions using AI.
-            </p>
+            <div class="header-top">
+                <div>
+                    <h1>Translate Bot</h1>
+                    <p>
+                        AI tools for product content.
+                    </p>
+                </div>
+
+                <nav class="app-nav" aria-label="Application navigation">
+                    <button
+                        id="translationNavButton"
+                        class="nav-button active"
+                        type="button"
+                    >
+                        Översättning
+                    </button>
+
+                    <button
+                        id="metaTitleNavButton"
+                        class="nav-button"
+                        type="button"
+                    >
+                        Meta-titlar
+                    </button>
+
+                    <button
+                        id="metaDescriptionNavButton"
+                        class="nav-button"
+                        type="button"
+                    >
+                        Meta-descriptions
+                    </button>
+                </nav>
+            </div>
         </header>
 
 
         <main>
+            <div id="translationView" class="app-view">
 
             <!-- ==========================================
                  TEXT TRANSLATOR
@@ -57,19 +88,26 @@
 
                 <div class="translation-settings">
 
-                    <label for="targetLanguage">
-                        Translate to
-                    </label>
+                    <div class="setting-row">
+                        <label for="targetLanguage">Translate to</label>
 
-                    <select id="targetLanguage">
+                        <select id="targetLanguage">
+                            <option value="English">English</option>
+                            <option value="Swedish">Swedish</option>
+                            <option value="Danish">Danish</option>
+                            <option value="Norwegian">Norwegian</option>
+                            <option value="Finnish">Finnish</option>
+                        </select>
+                    </div>
 
-                        <option value="English">English</option>
-                        <option value="Swedish">Swedish</option>
-                        <option value="Danish">Danish</option>
-                        <option value="Norwegian">Norwegian</option>
-                        <option value="Finnish">Finnish</option>
+                    <div class="setting-row">
+                        <label for="promptStyle">Translation style</label>
 
-                    </select>
+                        <select id="promptStyle">
+                            <option value="standard">Standard</option>
+                            <option value="natural">Natural English</option>
+                        </select>
+                    </div>
 
                 </div>
 
@@ -81,6 +119,7 @@
                     <button
                         id="translateButton"
                         class="primary-button"
+                        type="button"
                     >
                         Translate
                     </button>
@@ -113,6 +152,7 @@
                             <button
                                 id="copyButton"
                                 class="secondary-button"
+                                type="button"
                             >
                                 Copy
                             </button>
@@ -120,6 +160,7 @@
                             <button
                                 id="exportButton"
                                 class="secondary-button"
+                                type="button"
                             >
                                 Export to Excel
                             </button>
@@ -153,11 +194,26 @@
                         <h2>Translate Excel file</h2>
 
                         <p class="description">
-                            Upload an Excel file containing a
-                            <strong>description</strong> column.
+                            Upload an Excel file and choose which
+                            column you want to translate.
                         </p>
 
                     </div>
+
+                </div>
+
+
+                <!-- Excel column -->
+
+                <div class="translation-settings">
+
+                    <label for="excelColumn">
+                        Column to translate
+                    </label>
+
+                    <select id="excelColumn" disabled>
+                        <option value="">Choose an Excel file first</option>
+                    </select>
 
                 </div>
 
@@ -178,6 +234,21 @@
                         <option value="Norwegian">Norwegian</option>
                         <option value="Finnish">Finnish</option>
 
+                    </select>
+
+                </div>
+
+                <!-- Translation style -->
+
+                <div class="translation-settings">
+
+                    <label for="excelPromptStyle">
+                        Translation style
+                    </label>
+
+                    <select id="excelPromptStyle">
+                        <option value="standard">Standard</option>
+                        <option value="natural">Natural English</option>
                     </select>
 
                 </div>
@@ -215,14 +286,292 @@
                 </div>
 
 
-                <button
-                    id="excelButton"
-                    class="secondary-button excel-button"
-                >
-                    Translate Excel
-                </button>
+                <div class="action-row">
+                    <button
+                        id="excelButton"
+                        class="primary-button"
+                        type="button"
+                    >
+                        Translate Excel
+                    </button>
+
+                    <button
+                        id="stopExcelButton"
+                        class="secondary-button stop-button"
+                        type="button"
+                    >
+                        Stop translation
+                    </button>
+                </div>
 
             </section>
+
+            </div>
+
+            <!-- ==========================================
+                 META TITLES
+                 ========================================== -->
+
+            <div
+                id="metaTitleView"
+                class="app-view"
+                style="display: none;"
+            >
+
+            <section class="card meta-title-card">
+                <div class="section-header">
+                    <div>
+                        <h2>Meta-titlar</h2>
+                        <p class="description">
+                            Generate English SEO meta titles with the AI model.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="meta-title-inputs">
+                    <div class="meta-title-field">
+                        <label for="metaBrand">Brand</label>
+                        <input
+                            id="metaBrand"
+                            type="text"
+                            placeholder="e.g. ASUS, Shelly, Philips"
+                        >
+                        <span class="hint">Leave empty if there is no known brand.</span>
+                    </div>
+
+                    <div class="meta-title-field">
+                        <label for="metaProductName">Product name</label>
+                        <input
+                            id="metaProductName"
+                            type="text"
+                            placeholder="e.g. RT-BE58U V2 wireless router"
+                        >
+                    </div>
+
+                    <div class="meta-title-field">
+                        <label for="metaTitleSourceDescription">Product description</label>
+                        <textarea
+                            id="metaTitleSourceDescription"
+                            placeholder="Paste the product description here..."
+                        ></textarea>
+                    </div>
+                </div>
+
+                <div class="meta-title-action">
+                    <button
+                        id="generateMetaTitleButton"
+                        class="primary-button"
+                     type="button">
+                        Generate meta title
+                    </button>
+                </div>
+
+                <div id="metaTitleResult" class="meta-title-result" style="display: none;">
+                    <div class="section-header">
+                        <div>
+                            <h2>Generated meta title</h2>
+                            <span id="metaTitleCount" class="hint">0 / 60 characters</span>
+                        </div>
+                        <button
+                            id="copyMetaTitleButton"
+                            class="secondary-button"
+                         type="button">
+                            Copy
+                        </button>
+                    </div>
+
+                    <input
+                        id="generatedMetaTitle"
+                        class="meta-title-output"
+                        type="text"
+                        readonly
+                    >
+                </div>
+            </section>
+
+            <!-- ==========================================
+                 META TITLE EXCEL
+                 ========================================== -->
+
+            <section id="metaTitleExcelSection" class="card meta-title-card">
+                <div class="section-header">
+                    <div>
+                        <h2>Generate Meta Titles from Excel</h2>
+                        <p class="description">
+                            Upload an Excel file, choose the Brand, Product name and Description columns, and generate English meta titles.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="upload-area">
+                    <input type="file" id="metaExcelFile" accept=".xlsx">
+                    <label for="metaExcelFile">
+                        <span class="upload-title">Choose Excel file</span>
+                        <span class="upload-subtitle">.xlsx</span>
+                    </label>
+                    <p id="metaExcelSelectedFile" class="selected-file">No file selected</p>
+                </div>
+
+                <div class="translation-settings">
+                    <label for="metaExcelBrandColumn">Brand</label>
+                    <select id="metaExcelBrandColumn" disabled>
+                        <option value="">Choose an Excel file first</option>
+                    </select>
+                    <span class="hint">Choose None if the file has no brand column.</span>
+                </div>
+
+                <div class="translation-settings">
+                    <label for="metaExcelProductColumn">Product name</label>
+                    <select id="metaExcelProductColumn" disabled>
+                        <option value="">Choose an Excel file first</option>
+                    </select>
+                    <span class="hint">This column is required.</span>
+                </div>
+
+                <div class="translation-settings">
+                    <label for="metaExcelDescriptionColumn">Product description</label>
+                    <select id="metaExcelDescriptionColumn" disabled>
+                        <option value="">Choose an Excel file first</option>
+                    </select>
+                    <span class="hint">Choose None if the file has no description column.</span>
+                </div>
+
+                <div class="action-row">
+                    <button id="metaExcelButton" class="primary-button" type="button">Generate Meta Titles</button>
+                    <button id="stopMetaExcelButton" class="secondary-button stop-button" type="button">Stop generation</button>
+                </div>
+
+                <div id="metaExcelProgress" class="meta-title-result" style="display: none; margin-top: 24px;"></div>
+            </section>
+
+            </div>
+
+            <!-- ==========================================
+                 META DESCRIPTIONS
+                 ========================================== -->
+
+            <div
+                id="metaDescriptionView"
+                class="app-view"
+                style="display: none;"
+            >
+
+                <section class="card meta-title-card">
+                    <div class="section-header">
+                        <div>
+                            <h2>Meta-descriptions</h2>
+                            <p class="description">
+                                Generate English SEO meta descriptions with the AI model.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="meta-title-inputs">
+                        <div class="meta-title-field">
+                            <label for="metaDescBrand">Brand</label>
+                            <input
+                                id="metaDescBrand"
+                                type="text"
+                                placeholder="e.g. ASUS, Shelly, Philips"
+                            >
+                            <span class="hint">Leave empty if there is no known brand.</span>
+                        </div>
+
+                        <div class="meta-title-field">
+                            <label for="metaDescProductName">Product name</label>
+                            <input
+                                id="metaDescProductName"
+                                type="text"
+                                placeholder="e.g. RT-BE58U V2 wireless router"
+                            >
+                        </div>
+
+                        <div class="meta-title-field">
+                            <label for="metaDescSource">Product description</label>
+                            <textarea
+                                id="metaDescSource"
+                                placeholder="Paste the product description here..."
+                            ></textarea>
+                        </div>
+                    </div>
+
+                    <div class="meta-title-action">
+                        <button id="generateMetaDescriptionButton" class="primary-button" type="button">
+                            Generate meta description
+                        </button>
+                    </div>
+
+                    <div id="metaDescriptionResult" class="meta-title-result" style="display: none;">
+                        <div class="section-header">
+                            <div>
+                                <h2>Generated meta description</h2>
+                                <span id="metaDescriptionCount" class="hint">0 / 155 characters</span>
+                            </div>
+                            <button id="copyMetaDescriptionButton" class="secondary-button" type="button">
+                                Copy
+                            </button>
+                        </div>
+
+                        <textarea
+                            id="generatedMetaDescription"
+                            class="meta-description-output"
+                            readonly
+                        ></textarea>
+                    </div>
+                </section>
+
+                <section id="metaDescriptionExcelSection" class="card meta-title-card excel-card">
+                    <div class="section-header">
+                        <div>
+                            <h2>Generate Meta Descriptions from Excel</h2>
+                            <p class="description">
+                                Upload an Excel file, choose the Brand, Product name and Description columns, and generate English meta descriptions.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="upload-area">
+                        <input type="file" id="metaDescExcelFile" accept=".xlsx">
+                        <label for="metaDescExcelFile">
+                            <span class="upload-title">Choose Excel file</span>
+                            <span class="upload-subtitle">.xlsx</span>
+                        </label>
+                        <p id="metaDescExcelSelectedFile" class="selected-file">No file selected</p>
+                    </div>
+
+                    <div class="translation-settings">
+                        <label for="metaDescExcelBrandColumn">Brand</label>
+                        <select id="metaDescExcelBrandColumn" disabled>
+                            <option value="">Choose an Excel file first</option>
+                        </select>
+                        <span class="hint">Choose None if the file has no brand column.</span>
+                    </div>
+
+                    <div class="translation-settings">
+                        <label for="metaDescExcelProductColumn">Product name</label>
+                        <select id="metaDescExcelProductColumn" disabled>
+                            <option value="">Choose an Excel file first</option>
+                        </select>
+                        <span class="hint">This column is required.</span>
+                    </div>
+
+                    <div class="translation-settings">
+                        <label for="metaDescExcelDescriptionColumn">Product description</label>
+                        <select id="metaDescExcelDescriptionColumn" disabled>
+                            <option value="">Choose an Excel file first</option>
+                        </select>
+                        <span class="hint">Choose None if the file has no description column.</span>
+                    </div>
+
+                    <div class="action-row">
+                        <button id="metaDescExcelButton" class="primary-button" type="button">Generate Meta Descriptions</button>
+                        <button id="stopMetaDescExcelButton" class="secondary-button stop-button" type="button">Stop generation</button>
+                    </div>
+
+                    <div id="metaDescExcelProgress" class="meta-title-result" style="display: none;"></div>
+                </section>
+
+            </div>
 
         </main>
 
@@ -230,6 +579,8 @@
 
 
     <script src="script.js"></script>
+    <script src="meta_title.js"></script>
+    <script src="meta_description.js"></script>
 
 </body>
 

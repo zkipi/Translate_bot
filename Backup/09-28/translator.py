@@ -40,6 +40,14 @@ class ValidatorIssue(BaseModel):
     explanation: str
 
 
+class AIValidationResult(BaseModel):
+
+    status: str
+
+    issues: list[ValidatorIssue] = []
+
+    suggested_translation: str | None = None
+
 
 # ==========================================
 # VALIDATION
@@ -641,127 +649,48 @@ product description into {target_language}.
 
 Rules:
 
-SOURCE LANGUAGE
 - Detect the source language automatically.
-- Translate the content into the selected target language.
-- Never assume the source language from the product name alone.
-
-MEANING AND FACTUAL ACCURACY
-- Preserve the original meaning exactly.
-- Preserve every factual statement from the source.
-- Do not add information that is not explicitly present in the source.
-- Do not remove information that is present in the source.
-- Do not infer missing information.
-- Do not make assumptions about the product, its features, compatibility or intended use.
-- Never change a factual statement just because another wording sounds more natural.
-- When there is a choice between a more natural translation and a more factually precise translation, always prioritize factual accuracy.
-
-NUMBERS, MEASUREMENTS AND TECHNICAL INFORMATION
-- Preserve numbers and numerical values exactly.
-- Preserve measurements and units.
-- Preserve technical specifications such as wattage, voltage, current,
-  IP ratings, dimensions, frequencies, colour temperatures, capacities
-  and compatibility information.
-- Do not convert units unless the target language requires a formatting
-  change rather than an actual unit conversion.
-- Preserve continuous ranges as continuous ranges.
-- Do not turn a range into separate values.
-- Do not invent a range when the source does not contain one.
-- Preserve percentages, decimal values, temperatures and other numerical
-  information accurately.
-
-PRODUCT NAMES AND IDENTIFIERS
+- Preserve the original meaning and all factual information.
+- Do not add information that is not present in the original.
+- Do not remove information.
+- Correct obvious spelling and grammatical mistakes when translating,
+  but never change factual product information.
+- Keep product names unchanged when they are brand names,
+  model names or official product designations.
 - Keep brand names unchanged.
-- Keep model numbers unchanged.
-- Keep article numbers unchanged.
-- Keep product codes unchanged.
-- Keep official product designations unchanged.
-- Do not translate or modify a brand, model number, article number,
-  product code or official designation.
-- Translate ordinary descriptive words in product names.
-- Do not unnecessarily rearrange the word order of product names.
-- Preserve the original product-name structure when it is clear and
+- Keep model numbers and article numbers unchanged.
+- Preserve HTML tags and their structure.
+- Preserve the original HTML structure and formatting as much as possible.
+- Preserve measurements and units.
+- Preserve technical specifications such as wattage, voltage,
+  IP ratings, dimensions and colour temperatures.
+- Preserve numbers and numerical values exactly unless they need
+  to be converted because of a language-specific formatting convention.
+- Use natural language suitable for an e-commerce website.
+- Translate product names accurately, but do not unnecessarily
+  rearrange the word order of product names.
+- Keep the original product-name structure when it is clear and
   understandable.
-- Do not rewrite a product name as a normal sentence.
-- Do not change the structure of a product name merely to make it sound
-  more natural.
-- Only rearrange product-name words when the original structure would
-  be unnatural or misleading in the target language.
-
-TRANSLATION COMPLETENESS
-- Translate every ordinary source-language word that has a corresponding
-  meaning in the target language.
-- Never leave an ordinary source-language word untranslated simply because
-  it appears inside a compound word, hyphenated expression or product phrase.
-- For example, when translating Danish to English, "krave" must become
-  "collar".
-- "BASIC-krave" should become "BASIC collar" or another natural English
-  equivalent, while "BASIC" remains unchanged.
-- Do not preserve source-language words merely because they look like
-  product terminology.
-- A source-language word may remain unchanged only when it is a brand name,
-  model name, product code, official product designation, proper name or
-  another term that genuinely should not be translated.
-
-LANGUAGE QUALITY
-- Use natural, clear language suitable for an e-commerce website.
-- Correct obvious spelling and grammatical mistakes in the source while
-  translating.
-- Correct grammatical mistakes in the translation.
-- Use normal target-language grammar and word order.
-- Do not rewrite correct sentences unnecessarily.
-- Do not make stylistic changes that alter the meaning or structure.
-- Prefer clear and concise e-commerce wording over unnecessarily complex
-  wording.
-- Do not add marketing language or promotional claims.
-- Do not make the product sound better than it does in the source.
-- Do not add adjectives, benefits or persuasive wording that are not present
-  in the source.
-
-TERMINOLOGY
-- Follow all terminology rules provided separately.
-- Use the preferred terminology when the source term is present.
-- If the terminology rules specify multiple acceptable translations,
-  any explicitly accepted variant is valid.
-- Do not replace an approved technical term with a synonym merely because
-  the synonym sounds more natural.
-- Do not flag a translation merely because it uses an explicitly accepted
-  terminology variant.
-- Do not treat British vs American English spelling as an error when both
-  variants are explicitly accepted by the terminology rules.
-
-HTML
-- Preserve the original HTML structure.
-- Keep all existing HTML tags intact.
-- Preserve tags such as <p>, <strong>, <br>, <ul>, <ol>, <li>, <span>
-  and similar tags.
-- Do not add HTML tags that are not present in the source.
-- Do not remove HTML tags that are present in the source.
-- Do not move HTML tags unnecessarily.
-- Preserve HTML attributes and their values.
-- Preserve inline styles exactly.
-- Do not change CSS values, class names, IDs or other HTML attributes.
-- Preserve HTML entities such as &lt;, &gt;, &amp; and similar entities.
-- Never convert an HTML entity into a literal character when doing so would
-  change the HTML structure or meaning.
-
-STRUCTURE
-- Preserve paragraphs, bullet points, lists and line structure whenever
-  reasonably possible.
-- Do not merge separate paragraphs unnecessarily.
-- Do not split a paragraph unnecessarily.
-- Preserve the order of information from the source.
-- Do not add headings, bullet points or sections that are not present.
-- Do not remove existing headings, bullet points or sections.
-
-FINAL OUTPUT
-- Return only the translated content.
-- Do not add explanations.
-- Do not add comments about the translation.
-- Do not mention terminology decisions.
-- Do not mention uncertainties.
-- Do not include quotation marks around the translated content unless they
-  are present in the source.
+- Do not change the style or structure of product names just to make
+  them sound more like normal sentences.
+- Do not translate brand names, model numbers or product codes.
+- Translate every ordinary word from the source language into the target language.
+- Do not leave source-language words untranslated just because they are part of a
+  hyphenated expression, compound word, or product phrase.
+- For example, when translating Danish to English, "krave" must be translated
+  as "collar"; "BASIC-krave" should therefore become "BASIC collar" or
+  "BASIC-collar" depending on the natural target-language phrasing.
+- Only keep a source-language word unchanged if it is a brand name, model name,
+  product code, official product designation, or another proper name.
+- Do not add marketing claims.
+- Do not add features, specifications or benefits that are not present
+  in the original text.
+- Do not remove technical information.
+- Do not change the meaning of technical terms.
+- Keep HTML tags such as <p>, <strong>, <br>, <ul>, <li> and similar
+  tags intact.
+- Do not add or remove HTML tags unless required to preserve valid HTML.
+- Do not add explanations or comments outside the translated content.
 
 Product description:
 
@@ -847,8 +776,66 @@ Do not add markdown fences, explanations, labels, or commentary.
 
 
 # ==========================================
-# CURSOR SDK HELPERS
+# CURSOR CLI HELPERS
 # ==========================================
+
+def _extract_cursor_response(stdout):
+    """Extract the final assistant text from Cursor CLI output.
+
+    Cursor's stream-json output is newline-delimited JSON. The final
+    `result` event contains the final assistant response. We also keep
+    fallbacks for CLI-version differences.
+    """
+
+    result_text = None
+    assistant_parts = []
+    plain_lines = []
+
+    for raw_line in stdout.splitlines():
+        line = raw_line.strip()
+        if not line:
+            continue
+
+        try:
+            event = json.loads(line)
+        except json.JSONDecodeError:
+            plain_lines.append(line)
+            continue
+
+        event_type = event.get("type")
+
+        if event_type == "result":
+            text = event.get("text")
+            if isinstance(text, str) and text.strip():
+                result_text = text.strip()
+
+        elif event_type == "assistant":
+            # Different CLI versions can expose assistant text in
+            # slightly different shapes. Handle both common forms.
+            message = event.get("message")
+            if isinstance(message, dict):
+                content = message.get("content", [])
+            else:
+                content = event.get("content", [])
+
+            if isinstance(content, str):
+                assistant_parts.append(content)
+            elif isinstance(content, list):
+                for block in content:
+                    if isinstance(block, dict) and block.get("type") == "text":
+                        text = block.get("text")
+                        if isinstance(text, str):
+                            assistant_parts.append(text)
+                    elif isinstance(block, str):
+                        assistant_parts.append(block)
+
+    if result_text:
+        return result_text
+
+    if assistant_parts:
+        return "".join(assistant_parts).strip()
+
+    return "\n".join(plain_lines).strip()
 
 
 async def _create_cursor_agent(model):
@@ -1116,6 +1103,29 @@ Return ONLY valid JSON as an array with exactly one result for every product ID:
             "Grok batch validator returned an invalid response: "
             f"{exc}. Response: {response_text[:2000]}"
         ) from exc
+
+
+def validate_with_grok(
+    original,
+    translation,
+    target_language,
+    source_language=None,
+    prompt_style="standard"
+):
+    """Backward-compatible single-product wrapper around the batch validator."""
+
+    result = validate_with_grok_batch(
+        [{
+            "id": 1,
+            "original": original,
+            "translation": translation,
+            "local_issues": []
+        }],
+        target_language,
+        prompt_style
+    )
+
+    return result[1]
 
 
 # ==========================================
