@@ -1,0 +1,265 @@
+{
+  "version": 1,
+  "description": "Locked e-commerce terminology and factual consistency rules for Translate Bot.",
+  "prompt_rules": [
+    "Use the longest matching source phrase first. A specific phrase overrides a shorter term contained inside it.",
+    "Locked terminology is mandatory, not a suggestion, whenever the source term is actually used in the product text.",
+    "Do not replace a locked term with a synonym merely because another wording sounds more natural.",
+    "Never change the factual meaning of a technical term, product feature, measurement, compatibility statement or capacity statement.",
+    "Do not turn two endpoint values into two separate supported options when the source establishes a continuous range.",
+    "When the source establishes an adjustable or continuous range, preserve that range explicitly in the target text.",
+    "Do not invent a range when the source does not establish one.",
+    "For English product descriptions, use British English spelling and e-commerce terminology.",
+    "When describing a battery or power bank with an mAh value, describe mAh as capacity, not power (for example, 'a capacity of 10,000 mAh', not '10,000 mAh power').",
+    "For button interactions, translate single/double/long click or press terminology consistently as 'single press', 'double press' and 'long press' when the source describes physical button actions.",
+    "Prefer 'provides on/off control' or 'offers on/off control' over the unnatural phrase 'controls on/off' when describing a device's switching function.",
+    "When a Swedish source says that old switches are replaced with a smart one, keep the noun explicit and natural in English, for example 'Replace your old switches with a smart switch.' Do not use the vague phrase 'a smart one' when the product type is known.",
+    "For Wi-Fi terminology, use 'Wi-Fi' with a space and hyphen, and write frequencies such as '2.4 GHz'."
+  ],
+  "target_languages": {
+    "English": {
+      "required_terms": [
+        {
+          "id": "cool_white_colour_tone",
+          "source": [
+            "kallvit färgton"
+          ],
+          "preferred": [
+            "cool white colour tone"
+          ]
+        },
+        {
+          "id": "cool_white",
+          "source": [
+            "kallvit"
+          ],
+          "preferred": [
+            "cool white"
+          ]
+        },
+        {
+          "id": "warm_white_colour_tone",
+          "source": [
+            "varmvit färgton"
+          ],
+          "preferred": [
+            "warm white colour tone"
+          ]
+        },
+        {
+          "id": "warm_white",
+          "source": [
+            "varmvit"
+          ],
+          "preferred": [
+            "warm white"
+          ]
+        },
+        {
+          "id": "neutral_white_colour_tone",
+          "source": [
+            "neutralvit färgton"
+          ],
+          "preferred": [
+            "neutral white colour tone"
+          ]
+        },
+        {
+          "id": "neutral_white",
+          "source": [
+            "neutralvit"
+          ],
+          "preferred": [
+            "neutral white"
+          ]
+        },
+        {
+          "id": "wall_socket_contact",
+          "source": [
+            "väggkontakt"
+          ],
+          "preferred": [
+            "wall socket"
+          ]
+        },
+        {
+          "id": "wall_socket",
+          "source": [
+            "vägguttag"
+          ],
+          "preferred": [
+            "wall socket"
+          ]
+        },
+        {
+          "id": "battery_powered_push_button",
+          "source": [
+            "batteritryck"
+          ],
+          "preferred": [
+            "battery-powered push button"
+          ]
+        },
+        {
+          "id": "danish_collar",
+          "source": [
+            "krave"
+          ],
+          "preferred": [
+            "collar"
+          ]
+        },
+        {
+          "id": "danish_basic_collar",
+          "source": [
+            "BASIC-krave",
+            "BASIC krave"
+          ],
+          "preferred": [
+            "BASIC collar"
+          ]
+        },
+        {
+          "id": "single_press",
+          "source": [
+            "enkelklick",
+            "enkeltryck"
+          ],
+          "preferred": [
+            "single press"
+          ]
+        },
+        {
+          "id": "double_press",
+          "source": [
+            "dubbelklick",
+            "dubbeltryck"
+          ],
+          "preferred": [
+            "double press"
+          ]
+        },
+        {
+          "id": "long_press",
+          "source": [
+            "långt klick",
+            "långklick",
+            "långtryck"
+          ],
+          "preferred": [
+            "long press"
+          ]
+        },
+        {
+          "id": "wifi_repeater",
+          "source": [
+            "WiFi 2,4Ghz repeater",
+            "WiFi 2,4 GHz repeater",
+            "Wi-Fi 2,4 GHz repeater"
+          ],
+          "preferred": [
+            "2.4 GHz Wi-Fi repeater"
+          ]
+        }
+      ],
+      "forbidden_translations": [
+        {
+          "id": "cool_white_wrong_variants",
+          "source": [
+            "kallvit",
+            "kallvit färgton"
+          ],
+          "forbidden": [
+            "cold white",
+            "off-white"
+          ]
+        },
+        {
+          "id": "wall_socket_wrong_variant",
+          "source": [
+            "vägguttag",
+            "väggkontakt"
+          ],
+          "forbidden": [
+            "wall switch"
+          ]
+        },
+        {
+          "id": "mAh_power_wrong_variant",
+          "source": [
+            "mAh"
+          ],
+          "forbidden": [
+            "mAh power",
+            "mAh of power"
+          ]
+        },
+        {
+          "id": "button_click_wrong_variants",
+          "source": [
+            "enkelklick",
+            "dubbelklick",
+            "långt klick",
+            "långklick",
+            "enkeltryck",
+            "dubbeltryck",
+            "långtryck"
+          ],
+          "forbidden": [
+            "single click",
+            "double click",
+            "long click"
+          ]
+        },
+        {
+          "id": "on_off_wrong_variant",
+          "source": [
+            "av/på",
+            "on/off"
+          ],
+          "forbidden": [
+            "controls on/off"
+          ]
+        },
+        {
+          "id": "smart_one_wrong_variant",
+          "source": [
+            "ersätt dina gamla",
+            "ersätt dina gamla strömbrytare",
+            "ersätt dina gamla brytare"
+          ],
+          "forbidden": [
+            "a smart one"
+          ]
+        }
+      ]
+    }
+  },
+  "range_rules": {
+    "examples": [
+      {
+        "source": "10\"-19\"",
+        "preferred_english": "10\"-19\""
+      },
+      {
+        "source": "2700K-6500K",
+        "preferred_english": "2700K-6500K"
+      },
+      {
+        "source": "3-12V",
+        "preferred_english": "3-12V"
+      },
+      {
+        "source": "0-100%",
+        "preferred_english": "0-100%"
+      }
+    ],
+    "prompt_instructions": [
+      "Treat a hyphenated numeric span such as 10\"-19\" as a continuous range unless the source explicitly says otherwise.",
+      "If the source says that a product is adjustable and gives endpoints such as 10\" and 19\", translate the compatibility as a range (for example, 10\"-19\"), not as only two separate options (10\" or 19\").",
+      "For example, 'Passar såväl 10\"- som 19\"-enheter' in the context of an adjustable 10\"-19\" bracket means 'Suitable for 10\"-19\" units.'",
+      "Preserve both range endpoints and their units. Do not remove the range connector.",
+      "Natural equivalents such as 'from 10\" to 19\"' or 'between 10\" and 19\"' are acceptable when they clearly express a continuous range."
+    ]
+  }
+}

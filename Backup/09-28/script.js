@@ -1,37 +1,6 @@
-const BACKEND_URL = "http://127.0.0.1:5000";
-window.BACKEND_URL = BACKEND_URL;
-
 // ==========================================
-// APP NAVIGATION
+// ELEMENTS
 // ==========================================
-
-const translationNavButton = document.getElementById("translationNavButton");
-const metaTitleNavButton = document.getElementById("metaTitleNavButton");
-const metaDescriptionNavButton = document.getElementById("metaDescriptionNavButton");
-
-const translationView = document.getElementById("translationView");
-const metaTitleView = document.getElementById("metaTitleView");
-const metaDescriptionView = document.getElementById("metaDescriptionView");
-
-function showAppView(view) {
-    const views = {
-        translation: translationView,
-        "meta-title": metaTitleView,
-        "meta-description": metaDescriptionView
-    };
-
-    Object.entries(views).forEach(([name, element]) => {
-        element.style.display = name === view ? "block" : "none";
-    });
-
-    translationNavButton.classList.toggle("active", view === "translation");
-    metaTitleNavButton.classList.toggle("active", view === "meta-title");
-    metaDescriptionNavButton.classList.toggle("active", view === "meta-description");
-}
-
-translationNavButton.addEventListener("click", () => showAppView("translation"));
-metaTitleNavButton.addEventListener("click", () => showAppView("meta-title"));
-metaDescriptionNavButton.addEventListener("click", () => showAppView("meta-description"));
 
 const sourceText = document.getElementById("sourceText");
 const targetLanguage = document.getElementById("targetLanguage");
@@ -55,6 +24,7 @@ const excelButton = document.getElementById("excelButton");
 const stopExcelButton =
     document.getElementById("stopExcelButton");
 
+
 // ==========================================
 // VARIABLES
 // ==========================================
@@ -64,6 +34,7 @@ let detectedSourceLanguage = "";
 let currentExcelJobId = null;
 
 let excelTranslationStartTime = null;
+
 
 // ==========================================
 // TRANSLATE TEXT

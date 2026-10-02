@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Translate Bot</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div class="container">
+
+        <!-- Header -->
+
+        <header class="page-header">
+            <h1>Translate Bot</h1>
+            <p>
+                Translate product descriptions using AI.
+            </p>
+        </header>
+
+
+        <main>
+
+            <!-- ==========================================
+                 TEXT TRANSLATOR
+                 ========================================== -->
+
+            <section class="card translator-card">
+
+                <!-- Original text -->
+
+                <div class="section-header">
+
+                    <div>
+                        <h2>Original description</h2>
+
+                        <span class="hint">
+                            Source language is detected automatically
+                        </span>
+                    </div>
+
+                </div>
+
+
+                <textarea
+                    id="sourceText"
+                    placeholder="Paste your product description here..."
+                ></textarea>
+
+
+                <!-- Translation settings -->
+
+                <div class="translation-settings">
+
+                    <div class="setting-row">
+                        <label for="targetLanguage">Translate to</label>
+
+                        <select id="targetLanguage">
+                            <option value="English">English</option>
+                            <option value="Swedish">Swedish</option>
+                            <option value="Danish">Danish</option>
+                            <option value="Norwegian">Norwegian</option>
+                            <option value="Finnish">Finnish</option>
+                        </select>
+                    </div>
+
+                    <div class="setting-row">
+                        <label for="promptStyle">Translation style</label>
+
+                        <select id="promptStyle">
+                            <option value="standard">Standard</option>
+                            <option value="natural">Natural English</option>
+                        </select>
+                    </div>
+
+                </div>
+
+
+                <!-- Translate button -->
+
+                <div class="translate-action">
+
+                    <button
+                        id="translateButton"
+                        class="primary-button"
+                    >
+                        Translate
+                    </button>
+
+                </div>
+
+
+                <!-- Translation output -->
+
+                <div class="output-section">
+
+                    <div class="section-header">
+
+                        <div>
+
+                            <h2>Translation</h2>
+
+                            <span
+                                id="detectedLanguage"
+                                class="hint"
+                            >
+                                Detected language: -
+                            </span>
+
+                        </div>
+
+
+                        <div class="output-actions">
+
+                            <button
+                                id="copyButton"
+                                class="secondary-button"
+                            >
+                                Copy
+                            </button>
+
+                            <button
+                                id="exportButton"
+                                class="secondary-button"
+                            >
+                                Export to Excel
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+                    <textarea
+                        id="translatedText"
+                        placeholder="The translation will appear here..."
+                        readonly
+                    ></textarea>
+
+                </div>
+
+            </section>
+
+
+            <!-- ==========================================
+                 EXCEL TRANSLATOR
+                 ========================================== -->
+
+            <section class="card excel-card">
+
+                <div class="section-header">
+
+                    <div>
+
+                        <h2>Translate Excel file</h2>
+
+                        <p class="description">
+                            Upload an Excel file and choose which
+                            column you want to translate.
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Excel column -->
+
+                <div class="translation-settings">
+
+                    <label for="excelColumn">
+                        Column to translate
+                    </label>
+
+                    <select id="excelColumn" disabled>
+                        <option value="">Choose an Excel file first</option>
+                    </select>
+
+                </div>
+
+
+                <!-- Excel language -->
+
+                <div class="translation-settings">
+
+                    <label for="excelTargetLanguage">
+                        Translate to
+                    </label>
+
+                    <select id="excelTargetLanguage">
+
+                        <option value="English">English</option>
+                        <option value="Swedish">Swedish</option>
+                        <option value="Danish">Danish</option>
+                        <option value="Norwegian">Norwegian</option>
+                        <option value="Finnish">Finnish</option>
+
+                    </select>
+
+                </div>
+
+                <!-- Translation style -->
+
+                <div class="translation-settings">
+
+                    <label for="excelPromptStyle">
+                        Translation style
+                    </label>
+
+                    <select id="excelPromptStyle">
+                        <option value="standard">Standard</option>
+                        <option value="natural">Natural English</option>
+                    </select>
+
+                </div>
+
+
+                <!-- File upload -->
+
+                <div class="upload-area">
+
+                    <input
+                        type="file"
+                        id="excelFile"
+                        accept=".xlsx"
+                    >
+
+                    <label for="excelFile">
+
+                        <span class="upload-title">
+                            Choose Excel file
+                        </span>
+
+                        <span class="upload-subtitle">
+                            .xlsx
+                        </span>
+
+                    </label>
+
+                    <p
+                        id="selectedFile"
+                        class="selected-file"
+                    >
+                        No file selected
+                    </p>
+
+                </div>
+
+
+                <div style="
+                    display: flex;
+                    gap: 10px;
+                    align-items: center;
+                    flex-wrap: wrap;
+                ">
+                    <button
+                        id="excelButton"
+                        class="secondary-button excel-button"
+                    >
+                        Translate Excel
+                    </button>
+
+                    <button
+                        id="stopExcelButton"
+                        class="secondary-button"
+                        style="
+                            display: none;
+                            background: #b42318;
+                            color: white;
+                            border-color: #b42318;
+                        "
+                    >
+                        Stop translation
+                    </button>
+                </div>
+
+            </section>
+
+        </main>
+
+    </div>
+
+
+    <script src="script.js"></script>
+
+</body>
+
+</html>
